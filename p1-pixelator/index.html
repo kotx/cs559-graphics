@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Computer Graphics P1</title>
+    <style>
+        canvas {
+            border: 1px solid gray;
+            width: 512px;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        #pxsizeSet {
+            display: flex;
+            align-items: center;
+            gap: 1ch;
+        }
+    </style>
+    <script src="renderer.js" defer></script>
+</head>
+
+<body>
+    <canvas width="256" height="256"></canvas>
+    <form>
+        <fieldset>
+            <legend>Select image:</legend>
+            <input type="file" accept="image/*" id="fileInput">
+        </fieldset>
+
+        <fieldset>
+            <legend>Pixel size:</span></legend>
+            <div id="pxsizeSet">
+                <input type="range" min="0" value="0" step="1" id="pxsize">
+                <label id="pxsizeLabel" for="pxsize"></label>
+            </div>
+        </fieldset>
+
+        <fieldset id="shapeSet">
+            <legend>Pixel shape:</legend>
+            <input type="radio" value="square" name="shape" id="square" checked>
+            <label for="square">Square</label>
+
+            <input type="radio" value="triangle" name="shape" id="triangle">
+            <label for="triangle">Triangle</label>
+
+            <input type="radio" value="circle" name="shape" id="circle">
+            <label for="circle">Circle</label>
+
+            <input type="radio" value="random" name="shape" id="random">
+            <label for="random">Random (slow)</label>
+        </fieldset>
+
+        <fieldset id="sampleSet">
+            <legend>Sampling method:</legend>
+            <input type="radio" value="bilinear" name="sample" id="bilinear" checked>
+            <label for="bilinear">Bilinear</label>
+
+            <input type="radio" value="topLeft" name="sample" id="topLeft">
+            <label for="topLeft">Nearest (top-left)</label>
+        </fieldset>
+    </form>
+
+</body>
+
+</html>
