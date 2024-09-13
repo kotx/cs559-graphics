@@ -15,7 +15,10 @@ pxidx.addEventListener("input", (ev) => {
 });
 
 let shapeSet = document.querySelector("#shapeSet");
-shapeSet.addEventListener("click", (ev) => {
+shapeSet.addEventListener("change", (ev) => {
+    requestAnimationFrame(draw);
+});
+document.querySelector("#random").addEventListener("click", (ev) => {
     requestAnimationFrame(draw);
 });
 
