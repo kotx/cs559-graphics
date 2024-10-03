@@ -1,12 +1,18 @@
-let canvas = document.querySelector("canvas");
-let ctx = canvas.getContext("2d");
+let canvas =
+    /** @type {HTMLCanvasElement} */
+    (document.querySelector("canvas"));
+
+let ctx =
+    /** @type {CanvasRenderingContext2D} */
+    (canvas.getContext("2d"));
+
 ctx.imageSmoothingEnabled = false;
 
-let pxidx = document.querySelector("#pxsize");
-let pxsizeLabel = document.querySelector("#pxsizeLabel");
+let pxidx = /** @type {HTMLInputElement} */ (document.querySelector("#pxsize"));
+let pxsizeLabel = /** @type {HTMLInputElement} */ (document.querySelector("#pxsizeLabel"));
 let pxsizes = [1, 2, 4, 8, 16, 32, 64, 128, 256];
 let pxsize = pxsizes[pxidx.value];
-pxidx.max = pxsizes.length - 1;
+pxidx.max = (pxsizes.length - 1).toString();
 pxsizeLabel.textContent = `${pxsize} (${canvas.width / pxsize}x${canvas.height / pxsize})`;
 pxidx.addEventListener("input", (ev) => {
     pxsize = pxsizes[ev.target.value];
@@ -14,7 +20,7 @@ pxidx.addEventListener("input", (ev) => {
     requestAnimationFrame(draw);
 });
 
-let shapeSet = document.querySelector("#shapeSet");
+let shapeSet = /** @type {HTMLInputElement} */ (document.querySelector("#shapeSet"));
 shapeSet.addEventListener("change", (ev) => {
     requestAnimationFrame(draw);
 });
