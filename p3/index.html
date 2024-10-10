@@ -56,7 +56,7 @@
   </p>
   <form>
     <fieldset>
-      <legend>Boid count (release to apply):</span></legend>
+      <legend>Boid count:</span></legend>
       <div class="slider">
         <input type="range" min="0" max="1000" value="10" id="size" oninput="update('size')">
         <label id="sizeLabel"></label>
@@ -78,8 +78,6 @@
         <label id="maxForceLabel"></label>
       </div>
     </fieldset>
-
-    <button style="margin-top: 10px" onclick="clearScreen()" type="button">Clear</button>
   </form>
 
   <script src="boids.js" defer></script>

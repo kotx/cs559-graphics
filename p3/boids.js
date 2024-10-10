@@ -12,6 +12,9 @@ class boid {
     this.acceleration = new vec2(0, 0);
     this.maxForce = 0.2;
     this.maxSpeed = 4;
+
+    this.wingAngle = 0;
+    this.wingSpeed = 0.1 + Math.random() * 0.1;
   }
 
   edges() {
@@ -103,17 +106,54 @@ class boid {
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxSpeed);
     this.acceleration.mult(0);
+
+    this.wingAngle += this.wingSpeed;
+    if (this.wingAngle > Math.PI / 4 || this.wingAngle < -Math.PI / 4) {
+      this.wingSpeed *= -1;
+    }
+  }
+
+  drawWing(side) {
+    ctx.save();
+    ctx.rotate(this.wingAngle * side);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-8, 6 * side);
+    ctx.lineTo(-4, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
   }
 
   show() {
-    // matrix transforms
+    ctx.save();
+    ctx.translate(this.position.x, this.position.y);
+    ctx.rotate(Math.atan2(this.velocity.y, this.velocity.x));
 
-    ctx.fillStyle = "white";
-    ctx.strokeStyle = "black";
+    // Draw body
+    ctx.fillStyle = "skyblue";
     ctx.beginPath();
-    ctx.arc(this.position.x, this.position.y, 4, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 8, 4, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.stroke();
+
+    // Draw wings
+    ctx.fillStyle = "white";
+    this.drawWing(1); // Right wing
+    this.drawWing(-1); // Left wing
+
+    // Draw head
+    ctx.fillStyle = "gray";
+    ctx.beginPath();
+    ctx.arc(6, 0, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    // Update wing angle for animation
+    this.wingAngle += this.wingSpeed;
+    if (this.wingAngle > Math.PI / 4 || this.wingAngle < -Math.PI / 4) {
+      this.wingSpeed *= -1;
+    }
   }
 }
 
@@ -187,14 +227,8 @@ function init() {
 }
 
 function animate() {
-  if (clear) {
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    clear = false;
-  }
-
-  // ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
-  // ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   for (let boid of flock) {
     boid.edges();
@@ -235,10 +269,6 @@ function updateLabel(id, val) {
     4,
     " "
   )}</pre>`;
-}
-
-function clearScreen() {
-  clear = true;
 }
 
 updateLabel("size");
