@@ -113,47 +113,72 @@ class boid {
     }
   }
 
-  drawWing(side) {
-    ctx.save();
-    ctx.rotate(this.wingAngle * side);
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(-8, 6 * side);
-    ctx.lineTo(-4, 0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
-
   show() {
-    ctx.save();
-    ctx.translate(this.position.x, this.position.y);
-    ctx.rotate(Math.atan2(this.velocity.y, this.velocity.x));
+    const transform = new mat3()
+      .translate(this.position.x, this.position.y)
+      .rotate(Math.atan2(this.velocity.y, this.velocity.x));
 
-    // Draw body
-    ctx.fillStyle = "skyblue";
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 8, 4, 0, 0, Math.PI * 2);
-    ctx.fill();
+    this.drawBody(transform);
+    this.drawWing(transform, 1);
+    this.drawWing(transform, -1);
+    this.drawHead(transform);
 
-    // Draw wings
-    ctx.fillStyle = "white";
-    this.drawWing(1); // Right wing
-    this.drawWing(-1); // Left wing
-
-    // Draw head
-    ctx.fillStyle = "gray";
-    ctx.beginPath();
-    ctx.arc(6, 0, 3, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.restore();
-
-    // Update wing angle for animation
     this.wingAngle += this.wingSpeed;
     if (this.wingAngle > Math.PI / 4 || this.wingAngle < -Math.PI / 4) {
       this.wingSpeed *= -1;
     }
+  }
+
+  drawBody(transform) {
+    ctx.fillStyle = "skyblue";
+    ctx.beginPath();
+    this.drawEllipse(transform, 0, 0, 8, 4);
+    ctx.fill();
+  }
+
+  drawWing(parentTransform, side) {
+    const wingTransform = parentTransform.multiply(
+      new mat3().rotate(this.wingAngle * side)
+    );
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    this.drawPath(wingTransform, [
+      { x: 0, y: 0 },
+      { x: -8, y: 6 * side },
+      { x: -4, y: 0 },
+    ]);
+    ctx.fill();
+  }
+
+  drawHead(transform) {
+    ctx.fillStyle = "gray";
+    ctx.beginPath();
+    this.drawEllipse(transform, 6, 0, 3, 3);
+    ctx.fill();
+  }
+
+  drawPath(transform, points) {
+    const transformedPoints = points.map((p) =>
+      transform.transformPoint(p.x, p.y)
+    );
+    ctx.moveTo(transformedPoints[0].x, transformedPoints[0].y);
+    for (let i = 1; i < transformedPoints.length; i++) {
+      ctx.lineTo(transformedPoints[i].x, transformedPoints[i].y);
+    }
+    ctx.closePath();
+  }
+
+  drawEllipse(transform, cx, cy, rx, ry) {
+    const steps = 20;
+    const points = [];
+    for (let i = 0; i < steps; i++) {
+      const angle = (i / steps) * Math.PI * 2;
+      points.push({
+        x: cx + Math.cos(angle) * rx,
+        y: cy + Math.sin(angle) * ry,
+      });
+    }
+    this.drawPath(transform, points);
   }
 }
 
@@ -215,7 +240,72 @@ class vec2 {
   }
 }
 
-let clear = false;
+class mat3 {
+  constructor() {
+    this.elements = [1, 0, 0, 0, 1, 0, 0, 0, 1]; // triangular matrix
+  }
+
+  multiply(matrix) {
+    const a = this.elements;
+    const b = matrix.elements;
+    const result = new mat3();
+
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        let sum = 0;
+        for (let k = 0; k < 3; k++) {
+          sum += a[i * 3 + k] * b[k * 3 + j];
+        }
+        result.elements[i * 3 + j] = sum;
+      }
+    }
+
+    return result;
+  }
+
+  translate(x, y) {
+    return this.multiply(new mat3().setTranslation(x, y));
+  }
+
+  rotate(angle) {
+    return this.multiply(new mat3().setRotation(angle));
+  }
+
+  scale(x, y) {
+    return this.multiply(new mat3().setScale(x, y));
+  }
+
+  setTranslation(x, y) {
+    this.elements[2] = x;
+    this.elements[5] = y;
+    return this;
+  }
+
+  setRotation(angle) {
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    this.elements[0] = c;
+    this.elements[1] = -s;
+    this.elements[3] = s;
+    this.elements[4] = c;
+    return this;
+  }
+
+  setScale(x, y) {
+    this.elements[0] = x;
+    this.elements[4] = y;
+    return this;
+  }
+
+  transformPoint(x, y) {
+    const e = this.elements;
+    return {
+      x: x * e[0] + y * e[1] + e[2],
+      y: x * e[3] + y * e[4] + e[5],
+    };
+  }
+}
+
 let flock = [];
 function init() {
   flock = [];

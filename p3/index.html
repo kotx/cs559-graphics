@@ -17,7 +17,7 @@
     }
 
     canvas {
-      border: 2px solid pink;
+      border: 2px solid skyblue;
       width: 512px;
     }
 
@@ -33,6 +33,12 @@
 
     a {
       color: #82cdff;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .slider {
@@ -58,7 +64,7 @@
     <fieldset>
       <legend>Boid count:</span></legend>
       <div class="slider">
-        <input type="range" min="0" max="1000" value="10" id="size" oninput="update('size')">
+        <input type="range" min="0" max="1000" value="100" step="1" id="size" oninput="update('size')">
         <label id="sizeLabel"></label>
       </div>
     </fieldset>
