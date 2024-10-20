@@ -70,7 +70,7 @@ class Boss {
 	}
 
 	update(elapsedTime) {
-        time += elapsedTime;
+        this.time += elapsedTime;
         
     }
 
