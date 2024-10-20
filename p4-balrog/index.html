@@ -40,16 +40,25 @@
       padding: 0;
       margin: 10px;
     }
+
+    main {
+      display: flex;
+      gap: 10px;
+    }
   </style>
 </head>
 
 <body>
   <h1>Cave Story - Balrog II</h1>
-  <canvas width="960" height="720"></canvas>
+  <main>
+    <canvas width="960" height="720"></canvas>
+    <p>Arrow keys to move, Z to jump</p>
+  </main>
 
   <script src="scripts/input.js"></script>
   <script src="scripts/sprite.js"></script>
   <script src="scripts/quote.js"></script>
+  <script src="scripts/balrog.js"></script>
   <script src="scripts/game.js"></script>
 </body>
 
