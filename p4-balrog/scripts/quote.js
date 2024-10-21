@@ -56,12 +56,13 @@ class Player {
 	state = "idle";
 	dir = "left";
 	look = "";
+	visible = true;
 
 	async load() {
 		await this.sprite.load();
 	}
 
-	update(elapsedTime) {
+	handleInput() {
 		if (Input.keyDown("ArrowLeft")) {
 			this.dir = "left";
 			this.state = "walk";
@@ -81,7 +82,13 @@ class Player {
 		}
 	}
 
+	update(elapsedTime) {
+		this.handleInput();
+	}
+
 	draw(elapsedTime) {
+		if (!this.visible) return;
+
 		let animState;
 		switch (this.state) {
 			case "idle":

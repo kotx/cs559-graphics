@@ -60,8 +60,10 @@ class Boss {
 		]),
 	);
 
+	parametric = new Parametric();
+
 	pos = [0, 0];
-	state = "fly";
+	state = "walk";
 	dir = "left";
     time = 0;
 
@@ -71,12 +73,12 @@ class Boss {
 
 	update(elapsedTime) {
         this.time += elapsedTime;
-        
     }
 
 	draw(elapsedTime) {
 		const animState = this.state + this.dir;
 		this.sprite.draw(this.pos, elapsedTime, animState);
+		this.parametric.draw(this.time);
 	}
 }
 
