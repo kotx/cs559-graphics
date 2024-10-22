@@ -37,8 +37,7 @@ function calcBezierPos(p0, p1, p2, p3, t) {
 class Missile {
 	t = 0;
 	startTime = performance.now();
-	// duration = 3000 + Math.random() * 2000; // 3-5 seconds
-	duration = 3000;
+	duration = 3000 + Math.random() * 2000; // 3-5 seconds
 
 	segments = [];
 	currentSegment = 0;
@@ -145,7 +144,7 @@ class Missile {
 						ctx.strokeStyle = this.segmentColors[this.trailSegments[i]];
 					else ctx.strokeStyle = color;
 
-					ctx.lineWidth = 5;
+					ctx.lineWidth = 4;
 					ctx.stroke();
 
 					// Start new path from current position
@@ -160,13 +159,13 @@ class Missile {
 					this.segmentColors[this.trailSegments[this.trail.length - 1]];
 			else ctx.strokeStyle = color;
 
-			ctx.lineWidth = 5;
+			ctx.lineWidth = 4;
 			ctx.stroke();
 		}
 
 		// Draw missile (if not trail expired)
 		if (this.dead && this.trailSegments.length === 0) return;
-		drawPoint(this.pos, color, 10);
+		drawPoint(this.pos, color, 5);
 	}
 }
 
@@ -180,7 +179,7 @@ function init() {
 	fire();
 }
 
-const start = { x: 50, y: 50 };
+const start = { x: 100, y: 100 };
 const end = { x: 1200, y: 300 };
 function fire() {
 	missiles.push(new Missile(start, end));
