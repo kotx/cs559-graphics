@@ -1,4 +1,4 @@
-const { mat4, vec3 } = glMatrix;
+const { quat, vec3, mat3, mat4 } = glMatrix;
 
 const loading = document.querySelector("#loading");
 const objFile = document.querySelector('.objFile');
@@ -32,9 +32,11 @@ function lineToTx(loc, Tx) {
 	ctx.lineTo(res[0], res[1]);
 }
 
-function getWorldTransform() {
-	const cameraPos = updateCamera(time);
-	const lookAt = mat4.lookAt([], cameraPos, cameraTarget, cameraUp);
+function getLookAt(cameraPos) {
+	return mat4.lookAt([], cameraPos, cameraTarget, cameraUp);
+}
+
+function getWorldTransform(cameraPos, lookAt) {
 	const projection = mat4.perspective(
 		[],
 		Math.PI / 4,
@@ -55,6 +57,12 @@ function getWorldTransform() {
 	return world;
 }
 
+function isFaceVisible(lookAt, normal) {
+	const rotation = vec3.fromValues(lookAt[2], lookAt[5], lookAt[8]);
+	vec3.normalize(rotation, rotation);
+	return vec3.dot(rotation, normal) > 0;
+}
+
 function drawFace(world, vertices) {
 	ctx.beginPath();
 	moveToTx(vertices[0], world);
@@ -62,6 +70,8 @@ function drawFace(world, vertices) {
 		lineToTx(v, world);
 	}
 	ctx.closePath();
+
+	ctx.fill();
 	ctx.stroke();
 }
 
@@ -73,6 +83,8 @@ function loadOBJs() {
 		for (const objText of objFile.value.split('--\n')) {
 			objs.push(parseOBJ(objText));
 		}
+
+		console.log(objs);
 	} catch (e) {
 		alert(e);
 	}
@@ -88,11 +100,26 @@ function render(currentTime) {
 
 	time += 0.001 * deltaTime; // Camera movement speed
 
-	const world = getWorldTransform();
+	const cameraPos = updateCamera(time);
+	const lookAt = getLookAt(cameraPos);
+	const world = getWorldTransform(cameraPos, lookAt);
 	for (const obj of objs) {
-		for (const face of obj.facePositions) {
-			ctx.strokeStyle = "blue";
-			drawFace(world, face.map(idx => obj.vertexPositions[idx]));
+		ctx.strokeStyle = "blue";
+		ctx.fillStyle = "white";
+
+		// Hierarchical transformation
+		const rotation = quat.fromEuler([], ...obj.rotation);
+		const translation = vec3.fromValues(...obj.translation);
+		const scale = vec3.fromValues(...obj.scale);
+		const model = mat4.fromRotationTranslationScale([], rotation, translation, scale);
+		mat4.mul(model, world, model);
+
+		for (let idx = 0; idx < obj.facePositions.length; idx++) {
+			const face = obj.facePositions[idx];
+			const normal = obj.faceNormals[idx];
+
+			if (isFaceVisible(lookAt, normal))
+				drawFace(model, face.map(vidx => obj.vertexPositions[vidx]));
 		}
 	}
 

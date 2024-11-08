@@ -27,36 +27,37 @@
         :root,
         body {
             padding: 0;
-            margin: 10px;
+            width: 90vw;
+            height: 90vh;
         }
 
         h1,
         p {
             padding: 0;
-            margin: 5px 0;
         }
 
         main {
-            position: relative;
+            display: flex;
+            gap: 4px;
+            height: 480px;
         }
 
         canvas {
-            display: inline-block;
+            display: block;
             border: 1px solid rgba(0, 0, 0, 0.4);
-            width: 512px;
-            margin: 0 4px;
+            width: 640px;
+            height: 400px;
         }
 
+        .objGroup,
         .objFile {
-            height: 512px;
-            width: 512px;
-            margin: 0 4px;
+            height: 100%;
+            width: 100%;
         }
 
         .loadBtn {
-            top: 0;
-            position: absolute;
-            margin: 0 4px;
+            display: block;
+            margin: 4px 4px;
         }
     </style>
 </head>
@@ -64,11 +65,26 @@
 <body>
     <h1>3D Wireframe Renderer</h1>
     <p id="loading">Loading...</p>
+
     <main>
-        <canvas width="1024" height="1024"></canvas>
-        <textarea class="objFile">
+        <div>
+            <canvas width="1920" height="1200"></canvas>
+            <p>Features:</p>
+            <ul>
+                <li>Hierarchical modeling transforms</li>
+                <li>Parametric camera movement</li>
+                <li>Backface culling</li>
+                <!-- <li>Depth testing</li> -->
+            </ul>
+        </div>
+        <div class="objGroup">
+            <textarea class="objFile">
 # You can paste your own .obj files here!
 # Delimit them with -- on its own line.
+# Custom directives are supported to enable hierarchical modeling:
+# - `x [number] [number] [number]` for scaling an object.
+# - `r [deg] [deg] [deg]` for rotating an object around the origin.
+# - `t [number] [number] [number]` for translating an object.
 
 # Blender 4.2.3 LTS
 # www.blender.org
@@ -98,6 +114,10 @@ f 6/11/6 5/10/6 1/1/6 2/13/6
 # Blender 4.2.3 LTS
 # www.blender.org
 o Cube2
+x 0.9 0.9 0.9
+r 45 45 45
+t 0 0 3
+
 v 1.000000 1.000000 -1.000000 1.0000 0.0000 1.0000
 v 1.000000 -1.000000 -1.000000 1.0000 0.0000 1.0000
 v 1.000000 1.000000 1.000000 1.0000 0.0000 1.0000
@@ -118,7 +138,8 @@ f 8/8/3 7/9/3 5/10/3 6/11/3
 f 6/12/4 2/13/4 4/5/4 8/14/4
 f 2/13/5 1/1/5 3/4/5 4/5/5
 f 6/11/6 5/10/6 1/1/6 2/13/6</textarea>
-        <button class="loadBtn" onclick="loadOBJs()">Load objects!</button>
+            <button class="loadBtn" onclick="loadOBJs()">Load objects!</button>
+        </div>
     </main>
 
     <script src="objParse.js" defer></script>
