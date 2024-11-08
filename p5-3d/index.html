@@ -24,41 +24,104 @@
             color: black;
         }
 
-        canvas {
-            margin: 10px;
-            border: 2px solid rgba(0, 0, 0, 0.4);
-            width: 512px;
-        }
-
         :root,
         body {
             padding: 0;
-            margin: 0;
+            margin: 10px;
         }
 
-        h1, p {
+        h1,
+        p {
             padding: 0;
-            margin: 5px 10px;
+            margin: 5px 0;
         }
 
         main {
-            display: flex;
+            position: relative;
         }
 
-        .stats {
-            display: flex;
-            flex-direction: column;
+        canvas {
+            display: inline-block;
+            border: 1px solid rgba(0, 0, 0, 0.4);
+            width: 512px;
+            margin: 0 4px;
+        }
+
+        .objFile {
+            height: 512px;
+            width: 512px;
+            margin: 0 4px;
+        }
+
+        .loadBtn {
+            top: 0;
+            position: absolute;
+            margin: 0 4px;
         }
     </style>
 </head>
 
 <body>
-    <h1>3D</h1>
+    <h1>3D Wireframe Renderer</h1>
     <p id="loading">Loading...</p>
     <main>
         <canvas width="1024" height="1024"></canvas>
+        <textarea class="objFile">
+# You can paste your own .obj files here!
+# Delimit them with -- on its own line.
+
+# Blender 4.2.3 LTS
+# www.blender.org
+o Cube
+v 1.000000 1.000000 -1.000000 1.0000 0.0000 1.0000
+v 1.000000 -1.000000 -1.000000 1.0000 0.0000 1.0000
+v 1.000000 1.000000 1.000000 1.0000 0.0000 1.0000
+v 1.000000 -1.000000 1.000000 1.0000 0.0000 1.0000
+v -1.000000 1.000000 -1.000000 1.0000 1.0000 1.0000
+v -1.000000 -1.000000 -1.000000 1.0000 1.0000 1.0000
+v -1.000000 1.000000 1.000000 1.0000 1.0000 1.0000
+v -1.000000 -1.000000 1.000000 1.0000 1.0000 1.0000
+vn -0.0000 1.0000 -0.0000
+vn -0.0000 -0.0000 1.0000
+vn -1.0000 -0.0000 -0.0000
+vn -0.0000 -1.0000 -0.0000
+vn 1.0000 -0.0000 -0.0000
+vn -0.0000 -0.0000 -1.0000
+f 1/1/1 5/2/1 7/3/1 3/4/1
+f 4/5/2 3/4/2 7/6/2 8/7/2
+f 8/8/3 7/9/3 5/10/3 6/11/3
+f 6/12/4 2/13/4 4/5/4 8/14/4
+f 2/13/5 1/1/5 3/4/5 4/5/5
+f 6/11/6 5/10/6 1/1/6 2/13/6
+
+--
+# Blender 4.2.3 LTS
+# www.blender.org
+o Cube2
+v 1.000000 1.000000 -1.000000 1.0000 0.0000 1.0000
+v 1.000000 -1.000000 -1.000000 1.0000 0.0000 1.0000
+v 1.000000 1.000000 1.000000 1.0000 0.0000 1.0000
+v 1.000000 -1.000000 1.000000 1.0000 0.0000 1.0000
+v -1.000000 1.000000 -1.000000 1.0000 1.0000 1.0000
+v -1.000000 -1.000000 -1.000000 1.0000 1.0000 1.0000
+v -1.000000 1.000000 1.000000 1.0000 1.0000 1.0000
+v -1.000000 -1.000000 1.000000 1.0000 1.0000 1.0000
+vn -0.0000 1.0000 -0.0000
+vn -0.0000 -0.0000 1.0000
+vn -1.0000 -0.0000 -0.0000
+vn -0.0000 -1.0000 -0.0000
+vn 1.0000 -0.0000 -0.0000
+vn -0.0000 -0.0000 -1.0000
+f 1/1/1 5/2/1 7/3/1 3/4/1
+f 4/5/2 3/4/2 7/6/2 8/7/2
+f 8/8/3 7/9/3 5/10/3 6/11/3
+f 6/12/4 2/13/4 4/5/4 8/14/4
+f 2/13/5 1/1/5 3/4/5 4/5/5
+f 6/11/6 5/10/6 1/1/6 2/13/6</textarea>
+        <button class="loadBtn" onclick="loadOBJs()">Load objects!</button>
     </main>
 
+    <script src="objParse.js" defer></script>
     <script src="renderer.js" defer></script>
 </body>
 

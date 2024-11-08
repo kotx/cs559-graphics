@@ -1,33 +1,35 @@
 const { mat4, vec3 } = glMatrix;
 
-// Set up the canvas
+const loading = document.querySelector("#loading");
+const objFile = document.querySelector('.objFile');
 const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
-const loading = document.querySelector("#loading");
 
 // note: camera position CANNOT equal target!
 // also, +z is backwards
-const cameraTarget = vec3.fromValues(0, 4, 0);
+const cameraTarget = vec3.fromValues(0, 0, 0);
 const cameraUp = vec3.fromValues(0, 1, 0);
+const cameraRadius = 10;
+const cameraHeight = 2;
 let time = 0;
 
+// TODO: parametric curve
+function updateCamera(t) {
+	const x = cameraRadius * Math.cos(t * 0.6);
+	const z = cameraRadius * Math.sin(t * 0.6);
+	return vec3.fromValues(x, cameraHeight, z);
+}
+
+// From lecture slides
 function moveToTx(loc, Tx) {
 	const res = vec3.transformMat4([], loc, Tx);
 	ctx.moveTo(res[0], res[1]);
 }
 
+// From lecture slides
 function lineToTx(loc, Tx) {
 	const res = vec3.transformMat4([], loc, Tx);
 	ctx.lineTo(res[0], res[1]);
-}
-
-// TODO: parametric curve
-function updateCamera(t) {
-	const radius = 12;
-	const height = 10;
-	const x = radius * Math.cos(t);
-	const z = radius * Math.sin(t);
-	return vec3.fromValues(x, height, z);
 }
 
 function getWorldTransform() {
@@ -63,52 +65,39 @@ function drawFace(world, vertices) {
 	ctx.stroke();
 }
 
-function drawBase(transform) {
-	const baseHeight = 6;
-	const baseWidth = 2;
+let objs;
+function loadOBJs() {
+	objs = [];
 
-	const vertices = [
-		[-baseWidth, 0, -baseWidth],
-		[baseWidth, 0, -baseWidth],
-		[baseWidth, baseHeight, -baseWidth],
-		[-baseWidth, baseHeight, -baseWidth],
-		[-baseWidth, 0, baseWidth],
-		[baseWidth, 0, baseWidth],
-		[baseWidth, baseHeight, baseWidth],
-		[-baseWidth, baseHeight, baseWidth],
-	];
-
-	// Draw front face
-	drawFace(
-		transform,
-		[vertices[0], vertices[1], vertices[2], vertices[3]]
-	);
-
-	// Draw back face
-	drawFace(
-		transform,
-		[vertices[4], vertices[5], vertices[6], vertices[7]]
-	);
+	try {
+		for (const objText of objFile.value.split('--\n')) {
+			objs.push(parseOBJ(objText));
+		}
+	} catch (e) {
+		alert(e);
+	}
 }
 
-// Animation loop
+loadOBJs();
 let lastTime = 0;
-let rotation = 0;
-
-function animate(currentTime) {
+function render(currentTime) {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 	const deltaTime = currentTime - lastTime;
 	lastTime = currentTime;
 
 	time += 0.001 * deltaTime; // Camera movement speed
-	rotation += 0.002 * deltaTime; // Blade rotation speed
 
 	const world = getWorldTransform();
-	drawBase(world);
+	for (const obj of objs) {
+		for (const face of obj.facePositions) {
+			ctx.strokeStyle = "blue";
+			drawFace(world, face.map(idx => obj.vertexPositions[idx]));
+		}
+	}
 
-	requestAnimationFrame(animate);
+	requestAnimationFrame(render);
 }
 
-requestAnimationFrame(animate);
+requestAnimationFrame(render);
 loading.remove();
