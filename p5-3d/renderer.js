@@ -2,6 +2,8 @@ const { quat, vec3, mat3, mat4 } = glMatrix;
 
 const loading = document.querySelector("#loading");
 const objFile = document.querySelector('.objFile');
+const fpsLabel = document.querySelector("#fps");
+const polyLabel = document.querySelector("#poly");
 const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
 
@@ -11,12 +13,11 @@ const cameraTarget = vec3.fromValues(0, 0, 0);
 const cameraUp = vec3.fromValues(0, 1, 0);
 const cameraRadius = 10;
 const cameraHeight = 2;
-let time = 0;
 
 // TODO: parametric curve
 function updateCamera(t) {
-	const x = cameraRadius * Math.cos(t * 0.6);
-	const z = cameraRadius * Math.sin(t * 0.6);
+	const x = cameraRadius * Math.cos(t);
+	const z = cameraRadius * Math.sin(t);
 	return vec3.fromValues(x, cameraHeight, z);
 }
 
@@ -36,7 +37,7 @@ function getLookAt(cameraPos) {
 	return mat4.lookAt([], cameraPos, cameraTarget, cameraUp);
 }
 
-function getWorldTransform(cameraPos, lookAt) {
+function getWorldTransform(lookAt) {
 	const projection = mat4.perspective(
 		[],
 		Math.PI / 4,
@@ -58,8 +59,10 @@ function getWorldTransform(cameraPos, lookAt) {
 }
 
 function isFaceVisible(lookAt, normal) {
+	console.log(lookAt);
 	const rotation = vec3.fromValues(lookAt[2], lookAt[5], lookAt[8]);
 	vec3.normalize(rotation, rotation);
+	vec3.normalize(normal, normal);
 	return vec3.dot(rotation, normal) > 0;
 }
 
@@ -78,12 +81,11 @@ function drawFace(world, vertices) {
 let objs;
 function loadOBJs() {
 	objs = [];
-
 	try {
 		for (const objText of objFile.value.split('--\n')) {
-			objs.push(parseOBJ(objText));
+			const obj = parseOBJ(objText);
+			objs.push(obj);
 		}
-
 		console.log(objs);
 	} catch (e) {
 		alert(e);
@@ -92,20 +94,27 @@ function loadOBJs() {
 
 loadOBJs();
 let lastTime = 0;
+let time = 0;
+const deltaTimes = [];
 function render(currentTime) {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 	const deltaTime = currentTime - lastTime;
+	deltaTimes.push(deltaTime);
+	if (deltaTimes.length > 10)
+		deltaTimes.splice(0,deltaTimes.length - 10);
+
 	lastTime = currentTime;
+	time += deltaTime;
 
-	time += 0.001 * deltaTime; // Camera movement speed
-
-	const cameraPos = updateCamera(time);
+	const cameraPos = updateCamera(time * 0.001);
 	const lookAt = getLookAt(cameraPos);
-	const world = getWorldTransform(cameraPos, lookAt);
+	const world = getWorldTransform(lookAt);
+	let polys = 0;
+
 	for (const obj of objs) {
 		ctx.strokeStyle = "blue";
-		ctx.fillStyle = "white";
+		ctx.fillStyle = "#dddddd";
 
 		// Hierarchical transformation
 		const rotation = quat.fromEuler([], ...obj.rotation);
@@ -118,11 +127,17 @@ function render(currentTime) {
 			const face = obj.facePositions[idx];
 			const normal = obj.faceNormals[idx];
 
-			if (isFaceVisible(lookAt, normal))
+			// if (isFaceVisible(lookAt, normal)) {
 				drawFace(model, face.map(vidx => obj.vertexPositions[vidx]));
+				polys++;
+			// }
 		}
 	}
-
+	
+	polyLabel.innerHTML = `Polygons: ${polys}`;
+	
+	const avgDelta = (deltaTimes.reduce((p, c) => p + c) / deltaTimes.length);
+	fpsLabel.innerHTML = `FPS: ${Math.round(1000 / avgDelta)}`;
 	requestAnimationFrame(render);
 }
 

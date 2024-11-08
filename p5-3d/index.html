@@ -59,6 +59,19 @@
             display: block;
             margin: 4px 4px;
         }
+
+        .stat {
+            float: right;
+            margin-right: 8px;
+        }
+
+        p {
+            margin-bottom: 4px;
+        }
+
+        ul {
+            margin-top: 0;
+        }
     </style>
 </head>
 
@@ -69,6 +82,8 @@
     <main>
         <div>
             <canvas width="1920" height="1200"></canvas>
+            <p id="fps" class="stat"></p>
+            <p id="poly" class="stat"></p>
             <p>Features:</p>
             <ul>
                 <li>Hierarchical modeling transforms</li>
