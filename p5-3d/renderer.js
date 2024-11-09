@@ -1,7 +1,7 @@
 const { quat, vec3, mat3, mat4 } = glMatrix;
 
 const loading = document.querySelector("#loading");
-const objFile = document.querySelector('.objFile');
+const objFile = document.querySelector(".objFile");
 const fpsLabel = document.querySelector("#fps");
 const polyLabel = document.querySelector("#poly");
 const canvas = document.querySelector("canvas");
@@ -12,22 +12,24 @@ const ctx = canvas.getContext("2d");
 const cameraTarget = vec3.fromValues(0, 0, 0);
 const cameraUp = vec3.fromValues(0, 1, 0);
 const cameraRadius = 10;
-const cameraHeight = 2;
+const cameraHeight = 4;
 
-// TODO: parametric curve
+// parametric curve
 function updateCamera(t) {
 	const x = cameraRadius * Math.cos(t);
+	const y = cameraHeight * Math.sin(t);
 	const z = cameraRadius * Math.sin(t);
-	return vec3.fromValues(x, cameraHeight, z);
+
+	return vec3.fromValues(x, y, z);
 }
 
-// From lecture slides
+// from lecture slides
 function moveToTx(loc, Tx) {
 	const res = vec3.transformMat4([], loc, Tx);
 	ctx.moveTo(res[0], res[1]);
 }
 
-// From lecture slides
+// from lecture slides
 function lineToTx(loc, Tx) {
 	const res = vec3.transformMat4([], loc, Tx);
 	ctx.lineTo(res[0], res[1]);
@@ -58,14 +60,6 @@ function getWorldTransform(lookAt) {
 	return world;
 }
 
-function isFaceVisible(lookAt, normal) {
-	console.log(lookAt);
-	const rotation = vec3.fromValues(lookAt[2], lookAt[5], lookAt[8]);
-	vec3.normalize(rotation, rotation);
-	vec3.normalize(normal, normal);
-	return vec3.dot(rotation, normal) > 0;
-}
-
 function drawFace(world, vertices) {
 	ctx.beginPath();
 	moveToTx(vertices[0], world);
@@ -73,8 +67,6 @@ function drawFace(world, vertices) {
 		lineToTx(v, world);
 	}
 	ctx.closePath();
-
-	ctx.fill();
 	ctx.stroke();
 }
 
@@ -82,7 +74,7 @@ let objs;
 function loadOBJs() {
 	objs = [];
 	try {
-		for (const objText of objFile.value.split('--\n')) {
+		for (const objText of objFile.value.split("--\n")) {
 			const obj = parseOBJ(objText);
 			objs.push(obj);
 		}
@@ -101,8 +93,7 @@ function render(currentTime) {
 
 	const deltaTime = currentTime - lastTime;
 	deltaTimes.push(deltaTime);
-	if (deltaTimes.length > 10)
-		deltaTimes.splice(0,deltaTimes.length - 10);
+	if (deltaTimes.length > 10) deltaTimes.splice(0, deltaTimes.length - 10);
 
 	lastTime = currentTime;
 	time += deltaTime;
@@ -113,30 +104,31 @@ function render(currentTime) {
 	let polys = 0;
 
 	for (const obj of objs) {
-		ctx.strokeStyle = "blue";
-		ctx.fillStyle = "#dddddd";
-
 		// Hierarchical transformation
 		const rotation = quat.fromEuler([], ...obj.rotation);
 		const translation = vec3.fromValues(...obj.translation);
 		const scale = vec3.fromValues(...obj.scale);
-		const model = mat4.fromRotationTranslationScale([], rotation, translation, scale);
+		const model = mat4.fromRotationTranslationScale(
+			[],
+			rotation,
+			translation,
+			scale,
+		);
 		mat4.mul(model, world, model);
 
 		for (let idx = 0; idx < obj.facePositions.length; idx++) {
 			const face = obj.facePositions[idx];
-			const normal = obj.faceNormals[idx];
+			const vertices = face.map((vidx) => obj.vertexPositions[vidx]);
 
-			// if (isFaceVisible(lookAt, normal)) {
-				drawFace(model, face.map(vidx => obj.vertexPositions[vidx]));
-				polys++;
-			// }
+			ctx.strokeStyle = "blue";
+			drawFace(model, vertices);
+			polys++;
 		}
 	}
-	
+
 	polyLabel.innerHTML = `Polygons: ${polys}`;
-	
-	const avgDelta = (deltaTimes.reduce((p, c) => p + c) / deltaTimes.length);
+
+	const avgDelta = deltaTimes.reduce((p, c) => p + c) / deltaTimes.length;
 	fpsLabel.innerHTML = `FPS: ${Math.round(1000 / avgDelta)}`;
 	requestAnimationFrame(render);
 }

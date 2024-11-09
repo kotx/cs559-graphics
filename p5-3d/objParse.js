@@ -1,5 +1,5 @@
-// Adapted from https://github.com/mikolalysenko/parse-obj/blob/master/parse-obj.js
-// under MIT license.
+// Heavily adapted from https://github.com/mikolalysenko/parse-obj/blob/master/parse-obj.js
+// under the MIT license.
 // Changes made:
 // - Use a string instead of stream
 // - Use sync instead of promises
