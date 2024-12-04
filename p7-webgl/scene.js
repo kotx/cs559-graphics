@@ -160,13 +160,8 @@ const shaderProgram = renderer.createShaderProgram(
 const obj1 = parseOBJ(document.getElementById("obj1").text);
 const obj2 = parseOBJ(document.getElementById("obj2").text);
 
-renderer.addObject(obj1, shaderProgram, {
-	vPosition: { size: 3 },
-});
-
-renderer.addObject(obj2, shaderProgram, {
-	vPosition: { size: 3 },
-});
+renderer.addObject(obj1, shaderProgram);
+renderer.addObject(obj2, shaderProgram);
 
 // Animation loop
 let lastTime = 0;
