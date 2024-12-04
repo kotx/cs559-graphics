@@ -7,6 +7,7 @@
 function parseOBJ(text) {
 	const v = [];
 	const vn = [];
+	const vc = [];
 	const vt = [];
 	const f = [];
 	const fn = [];
@@ -24,6 +25,12 @@ function parseOBJ(text) {
 				if (toks.length < 3) {
 					throw new Error(`parse-obj: Invalid vertex :${line}`);
 				}
+				if (toks.length === 6) {
+					vc.push([+toks[4], +toks[5], +toks[6]]);
+				} else {
+					vc.push([0, 0, 0]);
+				}
+
 				v.push([+toks[1], +toks[2], +toks[3]]);
 				break;
 
@@ -73,6 +80,7 @@ function parseOBJ(text) {
 
 	return {
 		vertexPositions: v,
+		vertexColors: vc,
 		vertexNormals: vn,
 		vertexUVs: vt,
 		facePositions: f,
