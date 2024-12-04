@@ -67,6 +67,14 @@ class WebGLRenderer {
 			gl.STATIC_DRAW,
 		);
 
+        const normalBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+		gl.bufferData(
+			gl.ARRAY_BUFFER,
+			new Float32Array(obj.faceNormals.flat().flatMap(i => obj.vertexNormals[i])),
+			gl.STATIC_DRAW,
+		);
+
 		const indexBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 		gl.bufferData(
@@ -104,6 +112,10 @@ class WebGLRenderer {
 			const vPosition = gl.getAttribLocation(obj.shaderProgram, "vPosition");
 			gl.enableVertexAttribArray(vPosition);
 			gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
+
+            const vNormal = gl.getAttribLocation(obj.shaderProgram, "vNormal");
+			gl.enableVertexAttribArray(vNormal);
+			gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
 
 			// Setup uniforms
 			const tMVP = mat4.create();
