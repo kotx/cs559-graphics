@@ -27,7 +27,9 @@ class WebGLRenderer {
 		gl.shaderSource(shader, source);
 		gl.compileShader(shader);
 		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-			alert(gl.getShaderInfoLog(shader));
+			alert(
+				`${type === gl.VERTEX_SHADER ? "vertex" : type === gl.FRAGMENT_SHADER ? "fragment" : "[unknown type]"}: ${gl.getShaderInfoLog(shader)}`,
+			);
 			return null;
 		}
 
@@ -67,11 +69,13 @@ class WebGLRenderer {
 			gl.STATIC_DRAW,
 		);
 
-        const normalBuffer = gl.createBuffer();
+		const normalBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
 		gl.bufferData(
 			gl.ARRAY_BUFFER,
-			new Float32Array(obj.faceNormals.flat().flatMap(i => obj.vertexNormals[i])),
+			new Float32Array(
+				obj.faceNormals.flat().flatMap((i) => obj.vertexNormals[i]),
+			),
 			gl.STATIC_DRAW,
 		);
 
@@ -86,7 +90,7 @@ class WebGLRenderer {
 		this.objects.push({
 			vertexBuffer,
 			indexBuffer,
-            vertexCount: obj.facePositions.flat().length,
+			vertexCount: obj.facePositions.flat().length,
 			shaderProgram,
 		});
 	}
@@ -113,26 +117,21 @@ class WebGLRenderer {
 			gl.enableVertexAttribArray(vPosition);
 			gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
 
-            const vNormal = gl.getAttribLocation(obj.shaderProgram, "vNormal");
+			const vNormal = gl.getAttribLocation(obj.shaderProgram, "vNormal");
 			gl.enableVertexAttribArray(vNormal);
 			gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
 
 			// Setup uniforms
 			const tMVP = mat4.create();
 			mat4.multiply(tMVP, projection, lookAt);
-			const mvpLocation = gl.getUniformLocation(obj.shaderProgram, "uMVP");
+			const mvpLocation = gl.getUniformLocation(obj.shaderProgram, "mvpMatrix");
 			this.setUniform(gl, mvpLocation, tMVP);
 
-			const timeLocation = gl.getUniformLocation(obj.shaderProgram, "uTime");
+			const timeLocation = gl.getUniformLocation(obj.shaderProgram, "time");
 			this.setUniform(gl, timeLocation, time);
 
 			// Draw
-			gl.drawElements(
-				gl.TRIANGLES,
-				obj.vertexCount,
-				gl.UNSIGNED_SHORT,
-				0,
-			);
+			gl.drawElements(gl.TRIANGLES, obj.vertexCount, gl.UNSIGNED_SHORT, 0);
 		}
 	}
 
@@ -175,14 +174,10 @@ const obj2 = parseOBJ(document.getElementById("obj2").text);
 renderer.addObject(obj1, shaderProgram);
 renderer.addObject(obj2, shaderProgram);
 
-// Animation loop
-let lastTime = 0;
-function draw(currentTime) {
-	const deltaTime = currentTime - lastTime;
-	lastTime = currentTime;
-
-	const cameraPos = updateCamera(lastTime * 0.001);
-	renderer.render(cameraPos, deltaTime);
+function draw(currentTimeMs) {
+    const currentTime = currentTimeMs / 1000;
+	const cameraPos = updateCamera(currentTime);
+	renderer.render(cameraPos, currentTime);
 
 	requestAnimationFrame(draw);
 }

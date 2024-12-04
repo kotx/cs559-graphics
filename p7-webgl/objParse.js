@@ -12,8 +12,8 @@ function parseOBJ(text) {
 	const fn = [];
 	const ft = [];
 
-	text.split("\n").map((line) => {
-		line = line.trim();
+	text.split("\n").map((line_) => {
+		const line = line_.trim();
 		if (line.length === 0 || line.charAt(0) === "#") {
 			return;
 		}
