@@ -59,12 +59,15 @@
         uniform float time;
 
         void main(void) {
-            vec4 pos = vec4(vPosition, 1.0);
-            fPosition = pos.xyz;
+            vec3 rpos = vPosition;
+            // rotate on the vertex's xz axis (pitch)...
+            rpos.yz = mat2(cos(time), -sin(time), sin(time), cos(time)) * rpos.yz;
+            
+            fPosition = rpos.xyz;
             fNormal = vNormal;
             fColor = vColor;
 
-            gl_Position = mvpMatrix * pos;
+            gl_Position = mvpMatrix * vec4(rpos, 1.0);
         }
     </script>
     <script id="frag" type="not-js">

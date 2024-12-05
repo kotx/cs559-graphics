@@ -3,9 +3,9 @@ const { mat4, vec3 } = glMatrix;
 const cameraRadius = 20;
 const cameraHeight = 4;
 function updateCamera(t) {
-    const x = cameraRadius * Math.cos(t);
-    const y = cameraHeight * Math.sin(t);
-    const z = cameraRadius * Math.sin(t);
+    const x = cameraRadius * Math.cos(t / 4);
+    const y = cameraHeight * Math.sin(t / 4);
+    const z = cameraRadius * Math.sin(t / 4);
     return vec3.fromValues(x, y, z);
 }
 
