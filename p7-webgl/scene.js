@@ -1,6 +1,6 @@
 const { mat4, vec3 } = glMatrix;
 
-const cameraRadius = 10;
+const cameraRadius = 20;
 const cameraHeight = 4;
 function updateCamera(t) {
     const x = cameraRadius * Math.cos(t);
@@ -189,11 +189,29 @@ const shaderProgram = renderer.createShaderProgram(
     fragmentShader,
 );
 
-const obj1 = parseOBJ(document.getElementById("obj1").text);
-// const obj2 = parseOBJ(document.getElementById("obj2").text);
+const monkeOBJ = parseOBJ(document.getElementById("monke").text);
 
-renderer.addObject(obj1, shaderProgram);
-// renderer.addObject(obj2, shaderProgram);
+// Create a grid of monkeys
+const gridSize = 10;
+const spacing = 2.0;
+const monkeys = [];
+
+for (let x = -gridSize; x < gridSize; x++) {
+    for (let y = -gridSize; y < gridSize; y++) {
+        const rand = (Math.random() - 0.5) * gridSize * 2;
+
+        const monkey = structuredClone(monkeOBJ);
+        for (let i = 0; i < monkey.vertexPositions.length; i++) {
+            monkey.vertexPositions[i] = [
+                monkey.vertexPositions[i][0] + x * spacing,
+                monkey.vertexPositions[i][1] + y * spacing,
+                monkey.vertexPositions[i][2] + rand
+            ];
+        }
+        monkeys.push(monkey);
+        renderer.addObject(monkey, shaderProgram);
+    }
+}
 
 function draw(currentTimeMs) {
     const currentTime = currentTimeMs / 1000;
