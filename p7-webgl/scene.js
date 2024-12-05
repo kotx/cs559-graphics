@@ -193,19 +193,18 @@ const monkeOBJ = parseOBJ(document.getElementById("monke").text);
 
 // Create a grid of monkeys
 const gridSize = 10;
-const spacing = 2.0;
+const spacing = 2;
 const monkeys = [];
 
 for (let x = -gridSize; x < gridSize; x++) {
     for (let y = -gridSize; y < gridSize; y++) {
-        const rand = (Math.random() - 0.5) * gridSize * 2;
-
         const monkey = structuredClone(monkeOBJ);
+        const rand = (Math.random() - 0.5) * gridSize * 2;
         for (let i = 0; i < monkey.vertexPositions.length; i++) {
             monkey.vertexPositions[i] = [
                 monkey.vertexPositions[i][0] + x * spacing,
                 monkey.vertexPositions[i][1] + y * spacing,
-                monkey.vertexPositions[i][2] + rand
+                monkey.vertexPositions[i][2] + rand * spacing
             ];
         }
         monkeys.push(monkey);
@@ -213,12 +212,20 @@ for (let x = -gridSize; x < gridSize; x++) {
     }
 }
 
+const button = document.querySelector("button");
+button.onclick = () => {
+    playing = !playing;
+    requestAnimationFrame(draw);
+};
+
+let playing = false;
+
 function draw(currentTimeMs) {
     const currentTime = currentTimeMs / 1000;
     const cameraPos = updateCamera(currentTime);
     renderer.render(cameraPos, currentTime);
 
-    requestAnimationFrame(draw);
+    if (playing) requestAnimationFrame(draw);
 }
 
 requestAnimationFrame(draw);
