@@ -21,34 +21,43 @@
 </head>
 
 <body>
+    <input type="file" id="srcFiles" multiple>
     <canvas></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/gl-matrix@3.4.1/dist/gl-matrix.min.js"></script>
+    <script src="objParse.js"></script>
+    <script src="mtlParse.js"></script>
+    <script src="input.js"></script>
     <script id="vertex-shader" type="x-shader/x-vertex">
         attribute vec4 a_position;
-        attribute vec4 a_color;
+        attribute vec2 a_texcoord;
         uniform mat4 u_matrix;
-        varying vec4 v_color;
+        varying vec2 v_texcoord;
         
         void main() {
             // Multiply the position by the matrix.
             gl_Position = u_matrix * a_position;
 
-            v_color = a_color;
+            v_texcoord = a_texcoord;
         }
     </script>
     <script id="fragment-shader" type="x-shader/x-fragment">
         precision highp float;
-        varying vec4 v_color;
+        varying vec2 v_texcoord;
+        uniform sampler2D u_texture;
      
         void main() {
-           gl_FragColor = v_color;
+           gl_FragColor = texture2D(u_texture, v_texcoord);
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/gl-matrix@3.4.1/dist/gl-matrix.min.js"></script>
     <script>
-        const { mat4 } = glMatrix;
-        
+        const { mat4, quat } = glMatrix;
+
         function degToRad(d) {
             return d * Math.PI / 180;
+        }
+
+        function isPowerOf2(value) {
+            return (value & (value - 1)) == 0;
         }
 
         function makeBuffer(target, data) {
@@ -62,7 +71,7 @@
             const shader = gl.createShader(type);
             gl.shaderSource(shader, source);
             gl.compileShader(shader);
-            
+
             if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
                 throw `could not compile shader: ${gl.getShaderInfoLog(shader)}`;
             }
@@ -75,7 +84,7 @@
             gl.attachShader(program, vertex);
             gl.attachShader(program, fragment);
             gl.linkProgram(program);
-            
+
             if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
                 throw `could not link program: ${gl.getProgramInfoLog(program)}`;
             }
@@ -83,21 +92,35 @@
             return program;
         }
 
-        function initTexture(image) {
+        function makeTexture() {
             const tex = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, tex);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                new Uint8Array([255, 0, 255, 255]));
             return tex;
         }
 
-        function setAttr(program, attrName, buf, type=gl.FLOAT, normalize=false) {
+        function initTexture(tex, image) {
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+            if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+                gl.generateMipmap(gl.TEXTURE_2D);
+            } else {
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            }
+            return tex;
+        }
+
+        function setAttr(program, attrName, buf, type = gl.FLOAT, normalize = false, numComponents = 3) {
             const attrId = gl.getAttribLocation(program, attrName);
             gl.enableVertexAttribArray(attrId);
-            const numComponents = 3;  // (x, y, z)
             const offset = 0;         // start at the beginning of the buffer
             const stride = 0;         // how many bytes to move to the next vertex
-                                      // 0 = use the correct stride for type and numComponents
+            // 0 = use the correct stride for type and numComponents
 
             gl.bindBuffer(gl.ARRAY_BUFFER, buf);
             gl.vertexAttribPointer(attrId, numComponents, type, normalize, stride, offset);
@@ -115,7 +138,7 @@
         }
 
         // Setup
-        
+
         const canvas = document.querySelector("canvas");
         const gl = canvas.getContext("webgl");
 
@@ -123,267 +146,149 @@
         const fragmentShader = compileShader(gl.FRAGMENT_SHADER, document.getElementById("fragment-shader").text);
         const program = linkProgram(vertexShader, fragmentShader);
 
-        const positionBuffer = makeBuffer(gl.ARRAY_BUFFER, new Float32Array([
-            // left column front
-            0,   0,  0,
-            0, 150,  0,
-            30,   0,  0,
-            0, 150,  0,
-            30, 150,  0,
-            30,   0,  0,
-
-            // top rung front
-            30,   0,  0,
-            30,  30,  0,
-            100,   0,  0,
-            30,  30,  0,
-            100,  30,  0,
-            100,   0,  0,
-
-            // middle rung front
-            30,  60,  0,
-            30,  90,  0,
-            67,  60,  0,
-            30,  90,  0,
-            67,  90,  0,
-            67,  60,  0,
-
-            // left column back
-            0,   0,  30,
-            30,   0,  30,
-            0, 150,  30,
-            0, 150,  30,
-            30,   0,  30,
-            30, 150,  30,
-
-            // top rung back
-            30,   0,  30,
-            100,   0,  30,
-            30,  30,  30,
-            30,  30,  30,
-            100,   0,  30,
-            100,  30,  30,
-
-            // middle rung back
-            30,  60,  30,
-            67,  60,  30,
-            30,  90,  30,
-            30,  90,  30,
-            67,  60,  30,
-            67,  90,  30,
-
-            // top
-            0,   0,   0,
-            100,   0,   0,
-            100,   0,  30,
-            0,   0,   0,
-            100,   0,  30,
-            0,   0,  30,
-
-            // top rung right
-            100,   0,   0,
-            100,  30,   0,
-            100,  30,  30,
-            100,   0,   0,
-            100,  30,  30,
-            100,   0,  30,
-
-            // under top rung
-            30,   30,   0,
-            30,   30,  30,
-            100,  30,  30,
-            30,   30,   0,
-            100,  30,  30,
-            100,  30,   0,
-
-            // between top rung and middle
-            30,   30,   0,
-            30,   60,  30,
-            30,   30,  30,
-            30,   30,   0,
-            30,   60,   0,
-            30,   60,  30,
-
-            // top of middle rung
-            30,   60,   0,
-            67,   60,  30,
-            30,   60,  30,
-            30,   60,   0,
-            67,   60,   0,
-            67,   60,  30,
-
-            // right of middle rung
-            67,   60,   0,
-            67,   90,  30,
-            67,   60,  30,
-            67,   60,   0,
-            67,   90,   0,
-            67,   90,  30,
-
-            // bottom of middle rung.
-            30,   90,   0,
-            30,   90,  30,
-            67,   90,  30,
-            30,   90,   0,
-            67,   90,  30,
-            67,   90,   0,
-
-            // right of bottom
-            30,   90,   0,
-            30,  150,  30,
-            30,   90,  30,
-            30,   90,   0,
-            30,  150,   0,
-            30,  150,  30,
-
-            // bottom
-            0,   150,   0,
-            0,   150,  30,
-            30,  150,  30,
-            0,   150,   0,
-            30,  150,  30,
-            30,  150,   0,
-
-            // left side
-            0,   0,   0,
-            0,   0,  30,
-            0, 150,  30,
-            0,   0,   0,
-            0, 150,  30,
-            0, 150,   0]),
+        const positionBuffer = makeBuffer(gl.ARRAY_BUFFER, new Float32Array([-50, 75, 15, -50, -75, 15, -20, 75, 15, -50, -75, 15, -20, -75, 15, -20, 75, 15, -20, 75, 15, -20, 45, 15, 50, 75, 15, -20, 45, 15, 50, 45, 15, 50, 75, 15, -20, 15, 15, -20, -15, 15, 17, 15, 15, -20, -15, 15, 17, -15, 15, 17, 15, 15, -50, 75, -15, -20, 75, -15, -50, -75, -15, -50, -75, -15, -20, 75, -15, -20, -75, -15, -20, 75, -15, 50, 75, -15, -20, 45, -15, -20, 45, -15, 50, 75, -15, 50, 45, -15, -20, 15, -15, 17, 15, -15, -20, -15, -15, -20, -15, -15, 17, 15, -15, 17, -15, -15, -50, 75, 15, 50, 75, 15, 50, 75, -15, -50, 75, 15, 50, 75, -15, -50, 75, -15, 50, 75, 15, 50, 45, 15, 50, 45, -15, 50, 75, 15, 50, 45, -15, 50, 75, -15, -20, 45, 15, -20, 45, -15, 50, 45, -15, -20, 45, 15, 50, 45, -15, 50, 45, 15, -20, 45, 15, -20, 15, -15, -20, 45, -15, -20, 45, 15, -20, 15, 15, -20, 15, -15, -20, 15, 15, 17, 15, -15, -20, 15, -15, -20, 15, 15, 17, 15, 15, 17, 15, -15, 17, 15, 15, 17, -15, -15, 17, 15, -15, 17, 15, 15, 17, -15, 15, 17, -15, -15, -20, -15, 15, -20, -15, -15, 17, -15, -15, -20, -15, 15, 17, -15, -15, 17, -15, 15, -20, -15, 15, -20, -75, -15, -20, -15, -15, -20, -15, 15, -20, -75, 15, -20, -75, -15, -50, -75, 15, -50, -75, -15, -20, -75, -15, -50, -75, 15, -20, -75, -15, -20, -75, 15, -50, 75, 15, -50, 75, -15, -50, -75, -15, -50, 75, 15, -50, -75, -15, -50, -75, 15]),
             gl.STATIC_DRAW);
-        const colorBuffer = makeBuffer(gl.ARRAY_BUFFER, new Uint8Array([
+        const texBuffer = makeBuffer(gl.ARRAY_BUFFER, new Float32Array([
             // left column front
-            200,  70, 120,
-            200,  70, 120,
-            200,  70, 120,
-            200,  70, 120,
-            200,  70, 120,
-            200,  70, 120,
+            0, 0,
+            0, 1,
+            1, 0,
+            0, 1,
+            1, 1,
+            1, 0,
 
             // top rung front
-            200,  70, 120,
-            200,  70, 120,
-            200,  70, 120,
-            200,  70, 120,
-            200,  70, 120,
-            200,  70, 120,
+            0, 0,
+            0, 1,
+            1, 0,
+            0, 1,
+            1, 1,
+            1, 0,
 
             // middle rung front
-            200,  70, 120,
-            200,  70, 120,
-            200,  70, 120,
-            200,  70, 120,
-            200,  70, 120,
-            200,  70, 120,
+            0, 0,
+            0, 1,
+            1, 0,
+            0, 1,
+            1, 1,
+            1, 0,
 
             // left column back
-            80, 70, 200,
-            80, 70, 200,
-            80, 70, 200,
-            80, 70, 200,
-            80, 70, 200,
-            80, 70, 200,
+            0, 0,
+            1, 0,
+            0, 1,
+            0, 1,
+            1, 0,
+            1, 1,
 
             // top rung back
-            80, 70, 200,
-            80, 70, 200,
-            80, 70, 200,
-            80, 70, 200,
-            80, 70, 200,
-            80, 70, 200,
+            0, 0,
+            1, 0,
+            0, 1,
+            0, 1,
+            1, 0,
+            1, 1,
 
             // middle rung back
-            80, 70, 200,
-            80, 70, 200,
-            80, 70, 200,
-            80, 70, 200,
-            80, 70, 200,
-            80, 70, 200,
+            0, 0,
+            1, 0,
+            0, 1,
+            0, 1,
+            1, 0,
+            1, 1,
 
             // top
-            70, 200, 210,
-            70, 200, 210,
-            70, 200, 210,
-            70, 200, 210,
-            70, 200, 210,
-            70, 200, 210,
+            0, 0,
+            1, 0,
+            1, 1,
+            0, 0,
+            1, 1,
+            0, 1,
 
             // top rung right
-            200, 200, 70,
-            200, 200, 70,
-            200, 200, 70,
-            200, 200, 70,
-            200, 200, 70,
-            200, 200, 70,
+            0, 0,
+            1, 0,
+            1, 1,
+            0, 0,
+            1, 1,
+            0, 1,
 
             // under top rung
-            210, 100, 70,
-            210, 100, 70,
-            210, 100, 70,
-            210, 100, 70,
-            210, 100, 70,
-            210, 100, 70,
+            0, 0,
+            0, 1,
+            1, 1,
+            0, 0,
+            1, 1,
+            1, 0,
 
             // between top rung and middle
-            210, 160, 70,
-            210, 160, 70,
-            210, 160, 70,
-            210, 160, 70,
-            210, 160, 70,
-            210, 160, 70,
+            0, 0,
+            1, 1,
+            0, 1,
+            0, 0,
+            1, 0,
+            1, 1,
 
             // top of middle rung
-            70, 180, 210,
-            70, 180, 210,
-            70, 180, 210,
-            70, 180, 210,
-            70, 180, 210,
-            70, 180, 210,
+            0, 0,
+            1, 1,
+            0, 1,
+            0, 0,
+            1, 0,
+            1, 1,
 
             // right of middle rung
-            100, 70, 210,
-            100, 70, 210,
-            100, 70, 210,
-            100, 70, 210,
-            100, 70, 210,
-            100, 70, 210,
+            0, 0,
+            1, 1,
+            0, 1,
+            0, 0,
+            1, 0,
+            1, 1,
 
             // bottom of middle rung.
-            76, 210, 100,
-            76, 210, 100,
-            76, 210, 100,
-            76, 210, 100,
-            76, 210, 100,
-            76, 210, 100,
+            0, 0,
+            0, 1,
+            1, 1,
+            0, 0,
+            1, 1,
+            1, 0,
 
             // right of bottom
-            140, 210, 80,
-            140, 210, 80,
-            140, 210, 80,
-            140, 210, 80,
-            140, 210, 80,
-            140, 210, 80,
+            0, 0,
+            1, 1,
+            0, 1,
+            0, 0,
+            1, 0,
+            1, 1,
 
             // bottom
-            90, 130, 110,
-            90, 130, 110,
-            90, 130, 110,
-            90, 130, 110,
-            90, 130, 110,
-            90, 130, 110,
+            0, 0,
+            0, 1,
+            1, 1,
+            0, 0,
+            1, 1,
+            1, 0,
 
             // left side
-            160, 160, 220,
-            160, 160, 220,
-            160, 160, 220,
-            160, 160, 220,
-            160, 160, 220,
-            160, 160, 220]));
+            0, 0,
+            0, 1,
+            1, 1,
+            0, 0,
+            1, 1,
+            1, 0]));
+
+        const tex = makeTexture();
+        const image = new Image();
+        image.addEventListener("load", () => {
+            initTexture(tex, image);
+        });
+        image.addEventListener("error", () => alert("Error loading texture image"));
+        image.crossOrigin = "anonymous";
+        image.src = "https://live.staticflickr.com/5564/30725680942_0c6e60a13f_o.jpg";
 
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-        function draw() {
+        function draw(time) {
             canvas.height = window.innerHeight; canvas.width = window.innerWidth;
             gl.viewport(0, 0, canvas.width, canvas.height);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -394,30 +299,46 @@
 
             // Set attributes
             setAttr(program, "a_position", positionBuffer);
-            setAttr(program, "a_color", colorBuffer, gl.UNSIGNED_BYTE, true);
+            setAttr(program, "a_texcoord", texBuffer, gl.FLOAT, false, 2);
 
-            // Camera values (todo: make interactive)
-            var translation = [-150, 0, -360];
-            var rotation = [degToRad(190), degToRad(40), degToRad(320)];
-            var scale = [1, 1, 1];
-            var fov = degToRad(60);
-            
-            // Set uniforms
-            const matrix = mat4.perspective([], fov, canvas.width / canvas.height, 1, 1000);
-            mat4.translate(matrix, matrix, translation);
-            mat4.rotateX(matrix, matrix, rotation[0]);
-            mat4.rotateY(matrix, matrix, rotation[1]);
-            mat4.rotateZ(matrix, matrix, rotation[2]);
-            mat4.scale(matrix, matrix, scale);
+            // Set camera
+            const fov = degToRad(60);
+            const projectionMatrix = mat4.perspective([], fov, canvas.width / canvas.height, 1, 2000);
 
-            setUniform(program, "u_matrix", (loc, val) => gl.uniformMatrix4fv(loc, false, val), matrix);
+            const cameraAngleRadians = degToRad(time / 1000 * 60);
+            const numFs = 5;
+            const radius = 200;
+            const cameraMatrix = mat4.fromYRotation([], cameraAngleRadians);
+            mat4.translate(cameraMatrix, cameraMatrix, [0, 0, radius * 1.5]);
 
-            const primitiveType = gl.TRIANGLES;
-            const offset = 0;
-            const count = 16 * 6;
-            gl.drawArrays(primitiveType, offset, count);
+            const viewMatrix = mat4.invert([], cameraMatrix);
+            const viewProjectionMatrix = mat4.multiply([], projectionMatrix, viewMatrix);
 
-            // requestAnimationFrame(draw);
+            for (var ii = 0; ii < numFs; ++ii) {
+                var angle = ii * Math.PI * 2 / numFs;
+                var x = Math.cos(angle) * radius;
+                var y = Math.sin(angle) * radius;
+
+                // const translation = [-150, 0, -360];
+                // const rotation = [degToRad(190), degToRad(40), degToRad(320)];
+                // const scale = [1, 1, 1];
+
+                // const rotationQuat = quat.fromEuler([], rotation[0], rotation[1], rotation[2]);
+                // const modelMatrix = mat4.fromRotationTranslationScale([], rotation, translation, scale);
+                // const mvpMatrix = mat4.multiply([], modelMatrix, viewProjectionMatrix);
+
+                const mvpMatrix = mat4.translate([], viewProjectionMatrix, [x, 0, y]);
+
+                // Set uniforms
+                setUniform(program, "u_matrix", (loc, val) => gl.uniformMatrix4fv(loc, false, val), mvpMatrix);
+
+                const primitiveType = gl.TRIANGLES;
+                const offset = 0;
+                const count = 16 * 6;
+                gl.drawArrays(primitiveType, offset, count);
+            }
+
+            requestAnimationFrame(draw);
         }
 
         requestAnimationFrame(draw);
