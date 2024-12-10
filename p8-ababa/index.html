@@ -50,7 +50,7 @@
         }
     </script>
     <script>
-        const { mat4, quat } = glMatrix;
+        const { vec3, mat4, quat } = glMatrix;
 
         function degToRad(d) {
             return d * Math.PI / 180;
@@ -137,7 +137,20 @@
             setUniform(program, samplerName, gl.uniform1i);
         }
 
+        function updateCamera(t) {
+            const x = cameraRadius * Math.cos(t);
+            const y = cameraHeight * Math.sin(t);
+            const z = cameraRadius * Math.sin(t);
+
+            return vec3.fromValues(x, y, z);
+        }
+
         // Setup
+
+        const cameraTarget = [0, 0, 0];
+        const cameraUp = [0, 1, 0];
+        const cameraRadius = 200;
+        const cameraHeight = 150;
 
         const canvas = document.querySelector("canvas");
         const gl = canvas.getContext("webgl");
@@ -301,42 +314,29 @@
             setAttr(program, "a_position", positionBuffer);
             setAttr(program, "a_texcoord", texBuffer, gl.FLOAT, false, 2);
 
-            // Set camera
+            // Set projection
             const fov = degToRad(60);
             const projectionMatrix = mat4.perspective([], fov, canvas.width / canvas.height, 1, 2000);
 
-            const cameraAngleRadians = degToRad(time / 1000 * 60);
-            const numFs = 5;
-            const radius = 200;
-            const cameraMatrix = mat4.fromYRotation([], cameraAngleRadians);
-            mat4.translate(cameraMatrix, cameraMatrix, [0, 0, radius * 1.5]);
-
-            const viewMatrix = mat4.invert([], cameraMatrix);
+            // Set camera
+            const cameraPos = updateCamera(time * 0.001);
+            const viewMatrix = mat4.lookAt([], cameraPos, cameraTarget, cameraUp);
             const viewProjectionMatrix = mat4.multiply([], projectionMatrix, viewMatrix);
 
-            for (var ii = 0; ii < numFs; ++ii) {
-                var angle = ii * Math.PI * 2 / numFs;
-                var x = Math.cos(angle) * radius;
-                var y = Math.sin(angle) * radius;
+            // Set object transform
+            const translation = [0, 0, 0];
+            const rotation = [0, 0, 0];
+            const scale = [1, 1, 1];
+            const modelMatrix = mat4.fromRotationTranslationScale([], quat.fromEuler([], ...rotation), translation, scale);
 
-                // const translation = [-150, 0, -360];
-                // const rotation = [degToRad(190), degToRad(40), degToRad(320)];
-                // const scale = [1, 1, 1];
+            // Set uniforms
+            const mvpMatrix = mat4.multiply([], viewProjectionMatrix, modelMatrix);
+            setUniform(program, "u_matrix", (loc, val) => gl.uniformMatrix4fv(loc, false, val), mvpMatrix);
 
-                // const rotationQuat = quat.fromEuler([], rotation[0], rotation[1], rotation[2]);
-                // const modelMatrix = mat4.fromRotationTranslationScale([], rotation, translation, scale);
-                // const mvpMatrix = mat4.multiply([], modelMatrix, viewProjectionMatrix);
-
-                const mvpMatrix = mat4.translate([], viewProjectionMatrix, [x, 0, y]);
-
-                // Set uniforms
-                setUniform(program, "u_matrix", (loc, val) => gl.uniformMatrix4fv(loc, false, val), mvpMatrix);
-
-                const primitiveType = gl.TRIANGLES;
-                const offset = 0;
-                const count = 16 * 6;
-                gl.drawArrays(primitiveType, offset, count);
-            }
+            const primitiveType = gl.TRIANGLES;
+            const offset = 0;
+            const count = 16 * 6;
+            gl.drawArrays(primitiveType, offset, count);
 
             requestAnimationFrame(draw);
         }
