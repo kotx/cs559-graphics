@@ -400,10 +400,10 @@
             var translation = [-150, 0, -360];
             var rotation = [degToRad(190), degToRad(40), degToRad(320)];
             var scale = [1, 1, 1];
-            var fieldOfViewRadians = degToRad(60);
+            var fov = degToRad(60);
             
             // Set uniforms
-            const matrix = mat4.perspective([], Math.PI / 3, canvas.width / canvas.height, 1, 2000);
+            const matrix = mat4.perspective([], fov, canvas.width / canvas.height, 1, 1000);
             mat4.translate(matrix, matrix, translation);
             mat4.rotateX(matrix, matrix, rotation[0]);
             mat4.rotateY(matrix, matrix, rotation[1]);
