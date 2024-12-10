@@ -46,6 +46,11 @@
     <script src="https://cdn.jsdelivr.net/npm/gl-matrix@3.4.1/dist/gl-matrix.min.js"></script>
     <script>
         const { mat4 } = glMatrix;
+        
+        function degToRad(d) {
+            return d * Math.PI / 180;
+        }
+
         function makeBuffer(target, data) {
             const buf = gl.createBuffer();
             gl.bindBuffer(target, buf);
@@ -391,16 +396,13 @@
             setAttr(program, "a_position", positionBuffer);
             setAttr(program, "a_color", colorBuffer, gl.UNSIGNED_BYTE, true);
 
-            // Set uniforms
-
-            function degToRad(d) {
-                return d * Math.PI / 180;
-            }
+            // Camera values (todo: make interactive)
             var translation = [-150, 0, -360];
             var rotation = [degToRad(190), degToRad(40), degToRad(320)];
             var scale = [1, 1, 1];
             var fieldOfViewRadians = degToRad(60);
             
+            // Set uniforms
             const matrix = mat4.perspective([], Math.PI / 3, canvas.width / canvas.height, 1, 2000);
             mat4.translate(matrix, matrix, translation);
             mat4.rotateX(matrix, matrix, rotation[0]);
