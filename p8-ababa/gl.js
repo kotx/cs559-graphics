@@ -61,9 +61,11 @@ function makeTexture() {
 function initTexture(tex, image) {
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, tex);
+	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
 	if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+		console.log(`Generating mipmaps for ${image.src}`);
 		gl.generateMipmap(gl.TEXTURE_2D);
 	} else {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -80,12 +82,11 @@ function setAttr(
 	type = gl.FLOAT,
 	normalize = false,
 	numComponents = 3,
+	offset = 0,
+	stride = 0,
 ) {
 	const attrId = gl.getAttribLocation(program, attrName);
 	gl.enableVertexAttribArray(attrId);
-	const offset = 0; // start at the beginning of the buffer
-	const stride = 0; // how many bytes to move to the next vertex. 0 = use the correct stride for type and numComponents
-
 	gl.bindBuffer(gl.ARRAY_BUFFER, buf);
 	gl.vertexAttribPointer(
 		attrId,
@@ -97,9 +98,9 @@ function setAttr(
 	);
 }
 
-function setUniform(program, uniformName, func, val) {
+function setUniform(program, uniformName, func) {
 	const uniformLoc = gl.getUniformLocation(program, uniformName);
-	func(uniformLoc, val);
+	func(uniformLoc);
 }
 
 function setTexture(tex, unit, program, samplerName) {

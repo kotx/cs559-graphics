@@ -24,7 +24,6 @@
 <body>
   <canvas></canvas>
 
-  <!-- https://webglfundamentals.org/webgl/lessons/webgl-3d-lighting-directional.html -->
   <script id="vertex-shader" type="x-shader/x-vertex">
     attribute vec4 a_position;
     attribute vec3 a_normal;
@@ -33,14 +32,17 @@
     uniform mat4 u_projection;
     uniform mat4 u_view;
     uniform mat4 u_world;
+    uniform float u_debug;
     
     varying vec3 v_normal;
     varying vec2 v_texcoord;
+    varying float v_debug;
     
     void main() {
       gl_Position = u_projection * u_view * u_world * a_position;
       v_normal = mat3(u_world) * a_normal;
       v_texcoord = a_texcoord;
+      v_debug = u_debug;
     }
   </script>
   <script id="fragment-shader" type="x-shader/x-fragment">
@@ -48,8 +50,10 @@
     varying vec3 v_normal;
     varying vec2 v_texcoord;
     uniform sampler2D u_texture;
+    varying float v_debug;
     
     void main () {
+      // gl_FragColor = vec4(v_debug, 1.0, 0.0, 1.0);
       gl_FragColor = texture2D(u_texture, v_texcoord);
     }
   </script>
@@ -6607,9 +6611,9 @@
   </script>
 
   <script id="material" type="model/mtl">
-    # Blender 4.2.3 LTS MTL File: 'frog.mtl'
+    # Blender 4.2.3 LTS MTL File: 'None'
     # www.blender.org
-    
+
     newmtl lambert2SG
     Ns 0.000000
     Ka 1.000000 1.000000 1.000000
@@ -6619,7 +6623,7 @@
     d 1.000000
     illum 1
     map_Kd frogBodyTxt.png
-    
+
     newmtl lambert3SG
     Ns 0.000000
     Ka 1.000000 1.000000 1.000000
@@ -6649,8 +6653,8 @@
     const cameraRadius = 4;
     const cameraHeight = 2;
     const textureMap = {
-      "frogBodyTxt.png": "https://files.catbox.moe/ersdqi.avif",
-      "frogEyeTxt.png": "https://files.catbox.moe/iaxspj.avif"
+      "frogBodyTxt.png": "https://files.catbox.moe/zda1ld.png", // "https://files.catbox.moe/ersdqi.avif",
+      "frogEyeTxt.png": "https://files.catbox.moe/n1ee3e.png", // "https://files.catbox.moe/iaxspj.avif"
     };
 
     // Shader program
@@ -6672,17 +6676,15 @@
     const materialMap = {};
 
     for (const material of materials) {
-      for (const mapType of ["Ka", "Kd", "Ks", "d"]) {
-        const map = material["map_" + mapType];
-        if (map.file == null) continue;
+      const map = material["map_Kd"];
+      if (map.file == null) continue;
 
-        let fileBase = map.file.split("/");
-        fileBase = fileBase[fileBase.length - 1];
-        materialMap[material.name] = {
-          texture: await loadTexture(textureMap[fileBase]),
-          textureUnit: _texCounter++
-        };
-      }
+      let fileBase = map.file.split("/");
+      fileBase = fileBase[fileBase.length - 1];
+      materialMap[material.name] = {
+        texture: await loadTexture(textureMap[fileBase]),
+        textureUnit: _texCounter++
+      };
     }
     console.log("Loaded materials", materialMap);
 
@@ -6708,6 +6710,11 @@
         let currentIndex = 0;
 
         for (const face of faces) {
+          if (face.vertices.length != 3) {
+            alert("Invalid face detected! All faces must be triangles.");
+            throw "Aborting due to encountering non-triangular faces.";
+          }
+
           for (const faceVertex of face.vertices) {
             const vertex = model.vertices[faceVertex.vertexIndex - 1];
             vertices.push(vertex.x, vertex.y, vertex.z);
@@ -6785,12 +6792,12 @@
           );
 
           // Set uniforms
-          setUniform(program, "u_projection", (loc, val) => gl.uniformMatrix4fv(loc, false, val), projectionMatrix);
-          setUniform(program, "u_view", (loc, val) => gl.uniformMatrix4fv(loc, false, val), viewMatrix);
-          setUniform(program, "u_world", (loc, val) => gl.uniformMatrix4fv(loc, false, val), worldMatrix);
+          setUniform(program, "u_projection", (loc, val) => gl.uniformMatrix4fv(loc, false, projectionMatrix));
+          setUniform(program, "u_view", (loc, val) => gl.uniformMatrix4fv(loc, false, viewMatrix));
+          setUniform(program, "u_world", (loc, val) => gl.uniformMatrix4fv(loc, false, worldMatrix));
 
           // Set texture
-          setTexture(material.texture, material.textureUnit, program, "u_texture");
+          setTexture(material.texture, 0, program, "u_texture");
 
           gl.bindBuffer(gl.ARRAY_BUFFER, part.vertexBuffer);
           gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, part.indexBuffer);
