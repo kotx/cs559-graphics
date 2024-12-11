@@ -1,7 +1,7 @@
 let fileContents = {};
 
-document.getElementById("srcfiles").addEventListener("change", async () => {
-	const fileInput = document.getElementById("srcfiles");
+const fileInput = document.getElementById("srcfiles");
+fileInput.addEventListener("change", async () => {
 	const files = fileInput.files;
 
 	fileContents = {};
@@ -25,36 +25,28 @@ document.getElementById("srcfiles").addEventListener("change", async () => {
 			} else {
 				reader.onload = (event) => {
 					if (file.name.endsWith(".obj")) {
-						try {
-							const obj = new OBJFile(event.target.result).parse();
-							for (const model of obj.models) {
-								for (const face of model.faces) {
-									if (face.vertices.length !== 3) {
-										alert(
-											"Error: only faces with triangles are supported currently. Triangulate the mesh!",
-										);
-										throw "Found non-triangular faces";
-									}
+						const object = new OBJFile(event.target.result).parse();
+						for (const model of object.models) {
+							for (const face of model.faces) {
+								if (face.vertices.length !== 3) {
+									alert(
+										"Error: only faces with triangles are supported currently. Triangulate the mesh!",
+									);
+									throw "Found non-triangular faces";
 								}
 							}
-							resolve({
-								filename: file.name,
-								obj,
-							});
-							alert(`Loaded ${file.name} as obj`);
-						} catch (e) {
-							alert(`Error loading ${file.name}: ${e}`);
 						}
+						resolve({
+							filename: file.name,
+							object,
+						});
+						console.log(`Loaded ${file.name} as object`);
 					} else if (file.name.endsWith(".mtl")) {
-						try {
-							resolve({
-								filename: file.name,
-								mtl: new MTLFile(event.target.result).parse(),
-							});
-							alert(`Loaded ${file.name} as material`);
-						} catch (e) {
-							alert(`Error loading ${file.name}: ${e}`);
-						}
+						resolve({
+							filename: file.name,
+							material: new MTLFile(event.target.result).parse(),
+						});
+						console.log(`Loaded ${file.name} as material`);
 					} else {
 						alert(`Skipping unrecognized file ${file.name}`);
 					}

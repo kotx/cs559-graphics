@@ -110,7 +110,7 @@ function setTexture(tex, unit, program, samplerName) {
 }
 
 function loadTexture(url) {
-	return new Promise((resolve, reject) => {
+	return new Promise((resolve) => {
 		const tex = makeTexture();
 		const image = new Image();
 		image.addEventListener("load", () => {
@@ -118,8 +118,9 @@ function loadTexture(url) {
 			resolve(tex);
 		});
 		image.addEventListener("error", () => {
-			alert("Error loading texture image");
-			reject();
+			alert(`Error loading texture image ${url}. Falling back to default textures`);
+			image.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII=";
+			// todo: check if this refires the load event
 		});
 		image.crossOrigin = "anonymous";
 		image.src = url;
