@@ -25,11 +25,15 @@
   <p style="position: absolute; margin: 10px">
     This is an .obj and .mtl renderer. It supports basic diffuse, specular, and ambient shading, but the extensibility
     of the code is where it shines. <br />
-    Theoretically it can load some .obj, .mtl, texture files and display them, but loading isn't easy to implement! Sorry :(
+    Theoretically it can load some .obj, .mtl, texture files and display them, but loading isn't easy to implement!
+    Sorry :(
     <br />
     Texture maps and K-values supported by mtl files are passed to the shader, although the shader doesn't support much
     currently. <br />
     Be sure to open the console for cool debug output! <br />
+    The default model is by <a
+      href="https://sketchfab.com/3d-models/old-nasa-style-computer-console-2250dde29597458a809ca96757afdc8c"
+      style="color: cyan">SUrquh613</a>!
     <br />
     <input type="file" id="srcfiles" multiple>
   </p>
@@ -21592,7 +21596,7 @@
 
   <script type="module">
     let object, materials;
-    
+
     async function main() {
       const { vec3, mat4, quat } = glMatrix;
 
